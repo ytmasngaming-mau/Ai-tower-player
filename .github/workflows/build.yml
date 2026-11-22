@@ -1,0 +1,72 @@
+name: Build AI Tower Player APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Mengambil file repository
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      # 2. Menyiapkan Java 17
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # 3. Menyiapkan Android SDK
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v4
+        with:
+          packages: ''
+
+      # 4. Menginstal Android SDK yang dibutuhkan
+      - name: Install Android SDK Packages
+        run: |
+          sdkmanager --install "platforms;android-35"
+          sdkmanager --install "build-tools;35.0.0"
+          sdkmanager --install "platform-tools"
+
+      # 5. Menginstal Gradle 8.9
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.9'
+
+      # 6. Mengekstrak project ZIP
+      - name: Extract Android Project
+        run: |
+          unzip -o AI_Tower_Player_v1.3_Auto_Level_GitHub.zip -d source
+
+      # 7. Memeriksa struktur project
+      - name: Check Project Files
+        run: |
+          ls -la source/AITowerPlayer
+          ls -la source/AITowerPlayer/app
+
+      # 8. Membangun APK
+      - name: Build Debug APK
+        working-directory: source/AITowerPlayer
+        run: |
+          gradle --no-daemon assembleDebug
+
+      # 9. Mengunggah APK hasil build
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Tower-Player-APK
+          path: source/AITowerPlayer/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
